@@ -153,6 +153,12 @@ What I actually built, configured or changed, in order. Plans that were never ca
 - Bought the UniFi Power Kit (UniFi UPS 2U plus Power Distribution Pro).
 - Moved the rack on 1 November 2026.
 
+## 9 November
+
+- Built a **local NVR** for an IP camera (full write-up in [local-nvr.md](local-nvr.md)): isolated the camera on the IoT VLAN, added a firewall policy to block its outbound internet so it can no longer reach its overseas vendor cloud, and drove it by its local RTSP stream. Stood up Frigate in Docker on the Docker VM, recording to a dedicated NFS share on the NAS with a retention policy. Added go2rtc to pull each stream once and serve an HD live view over MSE, which works from the admin VLAN with no WebRTC port opened. Added a mosquitto broker and a small notifier so a person detection sends a push alert. Traced two issues live: the cross-VLAN live view (WebRTC could not cross the VLANs, switched to MSE plus a transcoded audio track) and person detection not firing (it was running on the low-bitrate sub-stream, moved to the main stream). Secrets kept in `chmod 600` env files, nothing in version control.
+- **DNSSEC now validating.** The DS record is published at the registry, the chain validates (a validating resolver returns the authenticated-data flag) and the published digest matches the zone's signing key.
+- Added a UniFi alarm that sends a **mobile push if the server or NAS drops off the network**.
+
 ## Planned (not done yet)
 
 - An Intel SFP+ card (X710 class) and a DAC for the host (not bought yet).

@@ -15,6 +15,7 @@ All names, addresses and identifiers in this repo are sanitized. The domain is s
 | [docs/storage-and-backups.md](docs/storage-and-backups.md) | ZFS, NAS layout, NFS and SMB, backups, snapshots, restore drill |
 | [docs/power-and-ups.md](docs/power-and-ups.md) | UPS, NUT over SNMPv3, ordered shutdown chain, power recovery |
 | [docs/remote-access-and-security.md](docs/remote-access-and-security.md) | WireGuard, admin access, MFA, certificates, secrets, reviews |
+| [docs/local-nvr.md](docs/local-nvr.md) | Turning a cloud IP camera into a fully local NVR: isolation, Frigate, go2rtc, MQTT alerts |
 
 ## Hardware
 
@@ -62,17 +63,19 @@ flowchart TB
 flowchart TB
     NAS["UNAS Pro 8 storage<br/>RAID 10"]
     PVE["Proxmox VE server<br/>ZFS boot pool"]
-    VM100["VM 100<br/>Docker apps"]
+    VM100["VM 100<br/>Docker apps, Frigate NVR"]
     CT102["CT 102<br/>AdGuard DNS"]
     CT103["CT 103<br/>Jellyfin"]
     VM101["VM 101<br/>Minecraft"]
     VM104["VM 104<br/>test farm"]
-    NAS -- "NFS: media, photos, backups" --> PVE
+    CAM["IP camera<br/>IoT VLAN, no internet"]
+    NAS -- "NFS: media, photos, backups, NVR" --> PVE
     PVE --> VM100
     PVE --> CT102
     PVE --> CT103
     PVE --> VM101
     PVE --> VM104
+    CAM -- "local RTSP" --> VM100
 ```
 
 ### Power
@@ -126,6 +129,8 @@ Design rules that shaped it:
 | Minecraft Java and Bedrock | Docker on VM 101 | Modded Forge 1.12.2 server (about 190 mods) and a vanilla Bedrock server, whitelisted, in an isolated public zone |
 | Test farm | VM 104 | Headless Godot test runner for a personal game project. Results land on the NAS |
 | WireGuard | UDM | Remote access for a phone and the travel router |
+| Frigate NVR | Docker on VM 100 | Local NVR for an IP camera: records to the NAS over NFS, go2rtc HD live view over MSE, CPU person detection. See [docs/local-nvr.md](docs/local-nvr.md) |
+| mosquitto MQTT | Docker on VM 100 | Broker for Frigate events; a small notifier turns person detections into a push alert |
 
 ## Security and privacy
 
@@ -134,7 +139,7 @@ Design rules that shaped it:
 - **Minimal internet exposure.** Only the two game ports are forwarded, plus the gateway's WireGuard port for remote access. UPnP is off. A passive outside check showed nothing else open (WireGuard does not answer unauthenticated packets). Internal hostnames were removed from public DNS.
 - **Strong admin access.** Hypervisor web login has two-factor (YubiKey WebAuthn, TOTP, paper recovery keys) and SSH is key-only. Admin web pages are behind an IP access list on the proxy and are not published on host ports.
 - **Secrets handled as secrets.** Scoped API tokens, one per consumer, IP-restricted where possible. Secrets live in root-only files and are never printed. Leaked credentials were revoked and replaced (see troubleshooting).
-- **Domain hygiene.** SPF `-all`, DMARC `p=reject`, null MX, CAA limited to Let's Encrypt.
+- **Domain hygiene.** SPF `-all`, DMARC `p=reject`, null MX, CAA limited to Let's Encrypt. DNSSEC is signed and validating (the DS record is published at the registry and the chain checks out).
 - **Patching.** Every Debian guest gets automatic security updates only, with manual reboots. Container images are pinned to exact versions and upgraded on purpose.
 - **Privacy.** Tracker lists in AdGuard, a 14-day query log, telemetry reduced, and outbound traffic for two VLANs routed through a commercial WireGuard VPN on a schedule.
 
@@ -161,7 +166,8 @@ Details: [docs/storage-and-backups.md](docs/storage-and-backups.md) and [docs/po
 | Dead-man's switches | healthchecks.io checks for the nightly backup, the Immich dump, the test farm and a 5-minute "host alive" heartbeat |
 | Host network link | A per-minute check of loss and latency to the gateway, with a "was bad from X to Y" summary when the alert could not get out at the time |
 | Container disk | A push monitor that alerts at 85% on the media container's disk |
-| Network devices | UniFi device-offline push alarms |
+| Network devices | UniFi device-offline push alarms, including a mobile alert if the server or NAS drops off the network |
+| Camera | Person-detection push alert from the local NVR ([docs/local-nvr.md](docs/local-nvr.md)) |
 
 ## Highlights: problems I solved
 
@@ -209,4 +215,3 @@ I designed this lab and I own every decision in it. I used AI assistants (Claude
 - Move the Docker stacks and host configs into git with secret scanning and pinned-version update PRs.
 - Add metrics and dashboards (Prometheus and Grafana) next to the existing alerting.
 - Grow the NAS with four more 24 TB drives as a second RAID group.
-- Finish DNSSEC (the DS record is pending at the registrar).

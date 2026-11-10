@@ -72,7 +72,7 @@ This page describes the security design and the controls that are in place. It d
 
 ## Domain and email hygiene
 
-The domain sends no mail, and says so: SPF `v=spf1 -all`, DMARC `p=reject` with strict alignment, and a null MX. CAA allows only Let's Encrypt. DNSSEC signing is enabled; the DS record is still waiting to be published at the registrar.
+The domain sends no mail, and says so: SPF `v=spf1 -all`, DMARC `p=reject` with strict alignment, and a null MX. CAA allows only Let's Encrypt. DNSSEC is signed and validating: the DS record is published at the registry, a validating resolver returns the authenticated-data flag, and the published digest matches the zone's signing key.
 
 ## Privacy
 
