@@ -11,6 +11,7 @@ All names, addresses and identifiers in this repo are sanitized. The domain is s
 | [docs/build-log.md](docs/build-log.md) | Dated timeline of everything built, configured or changed |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Every real problem fixed: symptom, investigation, root cause, fix, verification, lesson |
 | [docs/network.md](docs/network.md) | WAN, VLANs and zones, DNS filtering and forcing, Wi-Fi, switching |
+| [docs/network-segmentation.md](docs/network-segmentation.md) | Network-engineering view: VLAN segmentation, zone-based firewall policy, trust boundaries, device-isolation case study |
 | [docs/proxmox-and-services.md](docs/proxmox-and-services.md) | Hypervisor, guests, Docker stacks, reverse proxy, each service |
 | [docs/storage-and-backups.md](docs/storage-and-backups.md) | ZFS, NAS layout, NFS and SMB, backups, snapshots, restore drill |
 | [docs/power-and-ups.md](docs/power-and-ups.md) | UPS, NUT over SNMPv3, ordered shutdown chain, power recovery |
